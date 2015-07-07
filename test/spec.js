@@ -1,5 +1,5 @@
 let assert = require('assert')
-let yolog  = require('yolog')
+let yolog  = require('..')
 
 it('can append data', () => {
     let log = new yolog()
@@ -8,7 +8,7 @@ it('can append data', () => {
     assert(data == log[0])
 })
 
-it('can replay events' (done) => {
+it('can replay events', (done) => {
     let log = new yolog()
     log.append('event1')
     log.append('event2')
