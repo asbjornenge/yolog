@@ -4,8 +4,8 @@ let server = require('../server')
 let client = require('../client')
 let spec   = require('./spec')
 
-let reqaddr  = 'ipc:///tmp/yolog.ipc'
-let pipeaddr = 'ipc:///tmp/pipe.ipc'
+let reqaddr  = 'inproc://reqrep'
+let pipeaddr = 'inproc://pipe'
 let s,c
 
 spec(() => {
