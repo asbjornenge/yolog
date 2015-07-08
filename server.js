@@ -9,7 +9,7 @@ let server = function(opts) {
     this.rep.bind(opts.addr)
     this.rep.on('message', this.query.bind(this))
 
-    this.pipe = nano.socket('pull')
+    this.pipe = nano.socket('pair')
     this.pipe.bind(opts.pipe)
     this.pipe.on('message', this.append.bind(this))
 
@@ -17,10 +17,21 @@ let server = function(opts) {
 }
 server.prototype = {
     query : function(buf) {
-        this.rep.send(this.logs[parseInt(buf.toString())])
+        let query = buf.toString()
+        this.rep.send(this.logs[parseInt(query)])
     },
     append : function(buf) {
+        let log = buf.toString()
+        if (log.indexOf('YOREPLAY') == 0) return this.replay(log.substring(8))
         this.logs.push(buf.toString())
+    },
+    replay : function(index) {
+        index = parseInt(index)
+        while(index < this.logs.length) { 
+            this.pipe.send(this.logs[index]);
+            index++
+        }
+        this.pipe.send('YOEND'+this.logs.length)
     },
     close : function() {
         this.rep.close()

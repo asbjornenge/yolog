@@ -9,7 +9,7 @@ module.exports = (constructor, afterEachCb) => {
             else done()
         })
 
-        it.only('can append data', (done) => {
+        it('can append data', (done) => {
             let log = constructor() 
             let data = 'some arbitrary data'
             log.append(data)
@@ -26,12 +26,14 @@ module.exports = (constructor, afterEachCb) => {
             log.append('event1')
             log.append('event2')
             let _events = []
-            log.replay(0, (e) => {
-                _events.push(e)
-            }, (err) => {
-                assert(_events.length == 2)
-                done()
-            })
+            setTimeout(() => {
+                log.replay(0, (e) => {
+                    _events.push(e)
+                }, (err) => {
+                    assert(_events.length == 2)
+                    done()
+                })
+            },100)
         })
 
         it('emits events', (done) => {
