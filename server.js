@@ -4,16 +4,28 @@ let assign = require('object.assign')
 let server = function(opts) {
     if (!(this instanceof server)) return new server(opts)
     if (!opts) opts = {}
+
     this.rep = nano.socket('rep')
     this.rep.bind(opts.addr)
-    this.rep.on('message', this.onMessage.bind(this))
+    this.rep.on('message', this.query.bind(this))
+
+    this.pipe = nano.socket('pull')
+    this.pipe.bind(opts.pipe)
+    this.pipe.on('message', this.append.bind(this))
+
+    this.logs = []
 }
-server.prototype = assign(Array.prototype, {
-    onMessage : function(buf) {
-        let query = buf.toString()
-        this.rep.send(query+' response')
+server.prototype = {
+    query : function(buf) {
+        this.rep.send(this.logs[parseInt(buf.toString())])
+    },
+    append : function(buf) {
+        this.logs.push(buf.toString())
+    },
+    close : function() {
+        this.rep.close()
+        this.pipe.close()
     }
-})
-// client <-> server protocol
-// server <-> server protocol <- handle in another layer?
+}
+
 module.exports = server

@@ -14,8 +14,8 @@ yolog.prototype = assign(Array.prototype, {
             if (data.indexOf(l.pattern) >= 0) l.handler(data)
         })
     },
-    get : function(index) {
-        return this.log[index]
+    get : function(index, cb) {
+        cb(this.log[index])
     },
     replay : function(index, handler, end) {
         while(index < this.log.length) { handler(this.log[index]); index++ }

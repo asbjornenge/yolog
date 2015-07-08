@@ -4,30 +4,22 @@ let server = require('../server')
 let client = require('../client')
 let spec   = require('./spec')
 
-spec(() => {
-    let addr = 'ipc:///tmp/yolog.ipc'
-    let srv  = server({
-        addr : addr
-    })
-    return new client({
-        addr : addr
-    })
-})
+let reqaddr  = 'ipc:///tmp/yolog.ipc'
+let pipeaddr = 'ipc:///tmp/pipe.ipc'
+let s,c
 
-//it.ignore('can communicate', function(done) {
-//    let opts = {
-//        addr : 'ipc:///tmp/reqrep.ipc'
-//    }
-//    let s = server(opts)
-//    let c = client(opts)
-//
-//    c.replay
-//
-//    c.on('message', function(buf) {
-//        assert(buf.toString() == 'yolo response')
-//        s.rep.close()
-//        c.req.close()
-//        done()
-//    })
-//    c.req.send('yolo')
-//})
+spec(() => {
+    s = server({
+        addr : reqaddr,
+        pipe : pipeaddr
+    })
+    c = client({
+        addr : reqaddr,
+        pipe : pipeaddr
+    })
+    return c
+}, (done) => {
+    c.close()
+    s.close()
+    done()
+})
