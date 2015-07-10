@@ -9,7 +9,7 @@ module.exports = (constructor, afterEachCb) => {
             else done()
         })
 
-        it('can append data', (done) => {
+        it.only('can append data', (done) => {
             let log = constructor() 
             let data = 'some arbitrary data'
             log.append(data)

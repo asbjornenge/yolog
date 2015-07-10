@@ -18,6 +18,7 @@ let server = function(opts) {
 server.prototype = {
     query : function(buf) {
         let query = buf.toString()
+        if (query == 'YOLOG') return this.rep.send('MEh')
         this.rep.send(this.logs[parseInt(query)])
     },
     append : function(buf) {

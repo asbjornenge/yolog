@@ -3,10 +3,7 @@ let nano = require('nanomsg')
 let client = function(opts) {
     if (!(this instanceof client)) return new client(opts)
     if (!opts) opts = {}
-
-    this.req = nano.socket('req')
-    this.req.connect(opts.addr)
-    this.req.on('message', this.onreq.bind(this))
+    this.opts = opts
 
     this.pipe = nano.socket('pair')
     this.pipe.connect(opts.pipe)
@@ -15,9 +12,6 @@ let client = function(opts) {
     this.listeners = []
 }
 client.prototype = {
-    onreq : function(buf) {
-        if (this.onreqHandler) this.onreqHandler(buf)
-    },
     onpipe : function(buf) {
         if (this.onpipeHandler) this.onpipeHandler(buf)
     },
@@ -31,11 +25,13 @@ client.prototype = {
         // server(s) instead!
     },
     get : function(index, cb) {
-        this.onreqHandler = function(buf) { 
-            this.onreqHandler = null
+        let req = nano.socket('req')
+        req.connect(this.opts.addr)
+        req.on('message', function(buf) { 
             cb(buf.toString()) 
-        }
-        this.req.send(index)
+            req.close()
+        })
+        req.send(index)
     },
     replay : function(index, handler, end) {
         this.onpipeHandler = function(buf) { 
@@ -52,7 +48,6 @@ client.prototype = {
         this.listeners.push({ handler : handler, pattern : pattern })
     },
     close : function() {
-        this.req.close()
         this.pipe.close()
     }
 }
