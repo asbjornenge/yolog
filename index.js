@@ -101,7 +101,7 @@ yolog.prototype = assign({
             var sub = nano.socket('sub')
             sub.connect(membus)
             sub.on('message', function(msg) {
-                console.log('got bus msg', msg.toString(), this.opts.bus)
+                this.emit('log', msg)
             }.bind(this))
             this.subs[membus] = sub
         }.bind(this))
