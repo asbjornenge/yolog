@@ -30,6 +30,7 @@
     "memdb": "^1.0.1",
     "multicast-dns-peer": "^1.0.0",
     "nanomsg": "^1.1.1",
+    "network-address": "^1.0.0",
     "object.assign": "^3.0.1",
     "peernet": "^2.0.0",
     "swim": "^0.1.1"
