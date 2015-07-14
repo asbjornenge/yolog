@@ -35,23 +35,28 @@ let yolog = function(log, opts) {
                 return srv.data.target+':'+srv.data.port
             })
             this.emit('boostrap', addrs)
-            //this.swim.bootstrap(addrs)
+            this.swim.bootstrap(addrs)
         } 
     }.bind(this))
 
     // SWIM
     this.swim = new Swim({
         local : {
-            host : '127.0.0.1:11000'
+            host : this.opts.address+':'+this.opts.port,
+            meta : {} 
         }
     })
 
-    this.swim.on(Swim.EventType.Error, function onError(err) {
-        console.log('swim error', err)
+    this.swim.on(Swim.EventType.Error, function(err) {
+        console.error('swim error', err)
+    });
+    this.swim.on(Swim.EventType.Change, function(data) {
+        console.error('swim change', data)
     });
     this.swim.on(Swim.EventType.Ready, function onReady() {
-        console.log('swim ready')
-    });
+        this.emit('ready', this.swim.members())
+        this.destroyMcPeer()
+    }.bind(this));
 
     // errorhandling, retry
  
@@ -59,7 +64,16 @@ let yolog = function(log, opts) {
 
 yolog.prototype = assign({
     destroy : function() {
-        this.mcpeer.destroy()
+        this.swim.leave()
+        this.destroyMcPeer()
+    },
+    destroyMcPeer : function() {
+        try {
+            this.mcpeer.destroy()
+        } catch(e) {
+            if (e.message == 'Not running') return
+            throw e
+        }
     }
 }, EventEmitter.prototype)
 
