@@ -8,14 +8,66 @@ var nano         = require('nanomsg')
 var yolog = function(log, opts) {
     if (!(this instanceof yolog)) return new yolog(log, opts)
     this.opts = assign({
+        autostart      : true,
         bootstrapPeers : [],
         port           : 11000,
         address        : address(),
         busport        : 11010,
         busaddress     : address()
     }, opts || {})
-    this.subs = {}
+}
+yolog.prototype = assign({
+    append : function(data) {
+        settype('producer')
+    },
+    store : function(fn) {
+        settype('store')
+    },
+    project : function(fn) {
+        settype('projector')
+    },
+    settype : function(type) {
+        if (this.type && this.type != type)
+            return throw 'Duplicate type.' \\
+            + 'A yolog instance cannot act as both '+this.type+' and '+type
+        if (this.type && this.type == type) return
+        this.type = type
+        if (this.opts.autostart) this.init(this.opts)
+    },
+    bootstrap : function(type) {
 
+    }
+}, EventStore.prototype)
+
+var multicast = function(address, port) {
+    return mcpeer(log, {
+        answers : [
+            { 
+                name:'yolog', 
+                type:'SRV', 
+                data: { 
+                    port:this.opts.port, 
+                    target:this.opts.address 
+                }
+            }
+        ]
+    })
+    this.mcpeer.on('peer', function(peer) {
+        var srv = peer.filter(function(p) { return p.type == 'SRV' })
+        if (srv.length > 0) 
+            this.opts.bootstrapPeers = this.opts.bootstrapPeers.concat(srv)
+        if (this.opts.bootstrapPeers.length > 1) {
+            var addrs = this.opts.bootstrapPeers.map(function(srv) {
+                return srv.data.target+':'+srv.data.port
+            })
+            this.emit('boostrap', addrs)
+            this.swim.bootstrap(addrs)
+        } 
+    }.bind(this))
+
+}
+
+var producer = function() {
     // BUS (PUB)
     this.bus = nano.socket('pub')
     this.bus.bind(this.busaddr())

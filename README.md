@@ -39,7 +39,7 @@ npm install --save yolog
 ```js
 var yolog = require('yolog')
 
-// yolog need at least 3 nodes to bootstrap 
+// yolog need at least 3 nodes (any kind) to bootstrap 
 var log1  = yolog('mylogcluster')
 var log2  = yolog('mylogcluster')
 var log3  = yolog('mylogcluster')
@@ -52,10 +52,7 @@ log2.store('log', function(log) {
     console.log(log) // => yolo
 })
 
-log1.on('ready', function() {
-    log1.append('yolo')
-})
-
+log1.append('yolo')
 ```
 
 ## Options

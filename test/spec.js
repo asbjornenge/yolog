@@ -35,23 +35,23 @@ describe('yolog', function() {
         })
     })
 
-    it('will pubsub send logs to all other peers', function(done) {
-        var logs = []
-        var _log = 'this is the log message'
-        log2.on('log', function(log) {
-            assert(log.toString() == _log)
-            logs.push(log)
-            if (logs.length == 2) done()
-        })
-        log3.on('log', function(log) {
-            assert(log.toString() == _log)
-            logs.push(log)
-            if (logs.length == 2) done()
-        })
-        // TODO: Figure out API
-        // .ship ? .on('log' ?
-        log1.bus.send(_log)
-    })
+//    it('will pubsub send logs to all other peers', function(done) {
+//        var logs = []
+//        var _log = 'this is the log message'
+//        log2.on('log', function(log) {
+//            assert(log.toString() == _log)
+//            logs.push(log)
+//            if (logs.length == 2) done()
+//        })
+//        log3.on('log', function(log) {
+//            assert(log.toString() == _log)
+//            logs.push(log)
+//            if (logs.length == 2) done()
+//        })
+//        // TODO: Figure out API
+//        // .ship ? .on('log' ?
+//        log1.bus.send(_log)
+//    })
 
 //    it('can gossip messages', function(done) {
 //        log2.swim.on(Swim.EventType.Update, function(data) {
