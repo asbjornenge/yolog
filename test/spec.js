@@ -4,17 +4,14 @@ var yolog  = require('../index')
 
 describe('yolog', function() {
 
-    var log1 = yolog('yolog', {
-        port : 11000, // default
-        bus  : 'ipc:///tmp/yolog1.ipc'
+    var log1 = yolog.producer('yolog', {
+        port : 11000 // default
     })
-    var log2 = yolog('yolog', {
-        port : 11001,
-        bus  : 'ipc:///tmp/yolog2.ipc'
+    var log2 = yolog.store('yolog', {
+        port : 11001
     })
-    var log3 = yolog('yolog', {
-        port : 11002,
-        bus  : 'ipc:///tmp/yolog3.ipc'
+    var log3 = yolog.projector('yolog', {
+        port : 11002
     })
 
     after(function() {
@@ -34,34 +31,6 @@ describe('yolog', function() {
             done()
         })
     })
-
-//    it('will pubsub send logs to all other peers', function(done) {
-//        var logs = []
-//        var _log = 'this is the log message'
-//        log2.on('log', function(log) {
-//            assert(log.toString() == _log)
-//            logs.push(log)
-//            if (logs.length == 2) done()
-//        })
-//        log3.on('log', function(log) {
-//            assert(log.toString() == _log)
-//            logs.push(log)
-//            if (logs.length == 2) done()
-//        })
-//        // TODO: Figure out API
-//        // .ship ? .on('log' ?
-//        log1.bus.send(_log)
-//    })
-
-//    it('can gossip messages', function(done) {
-//        log2.swim.on(Swim.EventType.Update, function(data) {
-//            console.log('log2 update', data)
-//        })
-//        log1.swim.net.sendMessage({
-//            type : 'update',
-//            data : 'some message'
-//        })
-//    })
 
 })
 
