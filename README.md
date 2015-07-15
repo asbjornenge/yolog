@@ -65,4 +65,5 @@ very much opts
 
 ## TODO
 
+* Hashtree for storage replication & replay
 * Support eager projectors (non persisted logs)
