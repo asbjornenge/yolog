@@ -2,13 +2,13 @@
 
 Yolog is a complete message layer for performing distributed append-only logging.
 
-It is what the enterprise likes to call [event sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) and other like to call a [distributed commit log](http://kafka.apache.org/).
-
-If you are curios about the concept please read [this](https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying) article.
+It is what the enterprise likes to call [event sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) and other like to call a [distributed commit log](http://kafka.apache.org/). If you are curios about the concept please read [this](https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying) article.
 
 ## Introduction
 
-Yolog has 3 modes. It can act as a log **producer**, a log **store** or a **projector**. Logs flow throught the system from producer -> store -> projector.
+Yolog has 3 modes. It can act as a log **producer**, a log **store** or a **projector**. Logs flow throught the system from *producer -> store -> projector*.
+
+Yolog maintains cluster membership using a [gossip protocol](https://www.npmjs.com/package/swim), auto-discovery using [multicast-dns](https://www.npmjs.com/package/multicast-dns) and flexible high throughput messaging using [nanomsg](https://www.npmjs.com/package/nanomsg).
 
 ### Producer
 
@@ -39,7 +39,7 @@ npm install --save yolog
 ```js
 var yolog = require('yolog')
 
-// yolog need at least 3 nodes to get started
+// yolog need at least 3 nodes to bootstrap 
 var log1  = yolog('mylogcluster')
 var log2  = yolog('mylogcluster')
 var log3  = yolog('mylogcluster')
@@ -61,3 +61,8 @@ log1.on('ready', function() {
 ## Options
 
 very much opts
+
+
+## TODO
+
+* Support eager projectors (non persisted logs)
