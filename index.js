@@ -63,6 +63,10 @@ var yolog = function(log, opts) {
 //        console.error('swim change', data)
         this.checkBusMembers()
     }.bind(this));
+//    this.swim.on(Swim.EventType.Update, function(data) {
+//        console.error('swim update', data)
+//        this.checkBusMembers()
+//    }.bind(this));
     this.swim.on(Swim.EventType.Ready, function onReady() {
         this.emit('ready', this.swim.members())
         this.destroyMcPeer()

@@ -1,4 +1,5 @@
 var assert = require('assert')
+var Swim   = require('swim')
 var yolog  = require('../index')
 
 describe('yolog', function() {
@@ -34,7 +35,7 @@ describe('yolog', function() {
         })
     })
 
-    it('will send messages to all other peers', function(done) {
+    it('will pubsub send logs to all other peers', function(done) {
         var logs = []
         var _log = 'this is the log message'
         log2.on('log', function(log) {
@@ -51,6 +52,16 @@ describe('yolog', function() {
         // .ship ? .on('log' ?
         log1.bus.send(_log)
     })
+
+//    it('can gossip messages', function(done) {
+//        log2.swim.on(Swim.EventType.Update, function(data) {
+//            console.log('log2 update', data)
+//        })
+//        log1.swim.net.sendMessage({
+//            type : 'update',
+//            data : 'some message'
+//        })
+//    })
 
 })
 
