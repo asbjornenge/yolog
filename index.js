@@ -48,7 +48,8 @@ producer.prototype = assign({
         this.swim.on('error', function(err) { console.error('swim error', err) })
     },
     append : function(data) {
-        this.logs.push(data)
+        this.pub.send(data)
+// TODO:        this.logs.push(data)
     },
     _leave : function() {
         // TODO: This throws is no connection - why?
@@ -71,6 +72,9 @@ store.prototype = assign({
     },
     checkProducers : function() {
         manageProducers(this, this.swim.members())
+    },
+    onMessage : function(msg) {
+        this.emit('log', msg)
     },
     _leave : function() {
         Object.keys(this.subs).forEach(function(pubaddr) {
@@ -155,10 +159,14 @@ function pubaddr(opts) {
 }
 
 function manageProducers(yolog, members) {
-    // Add any new members
     var producers = members.filter(function(member) {
         return member.meta.type == 'producer'
     })
+    var pubs = producers.map(function(member) {
+        return member.meta.pub
+    })
+    
+    // Connect to new producers 
 
     producers 
         .filter(function(producer) {
@@ -168,19 +176,20 @@ function manageProducers(yolog, members) {
             var pub = producer.meta.pub
             var sub = nano.socket('sub')
             sub.connect(pub)
+            sub.on('message', yolog.onMessage.bind(yolog))
             yolog.subs[pub] = sub
         })
 
-    // Disconnect lost members 
+    // Disconnect lost producers
 
-//    var pubaddrs = members.
-//    Object.keys(this.subs)
-//        .filter(function(pubaddr) {
-//            return 
-//        })
-//        .filter(function(producer) {
-//            return Object.keys(producers).indexOf(producer.meta.pub) < 0 
-//        })
+    Object.keys(yolog.subs)
+        .filter(function(pub) {
+            return pubs.indexOf(pub) < 0 
+        })
+        .forEach(function(producer) {
+            yolog.subs[producer].close()
+            delete yolog.subs[producer]
+        })
         
 }
 
