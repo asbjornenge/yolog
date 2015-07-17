@@ -17,9 +17,12 @@ var yolog = {
     join : function() {
         join(this.opts, function(err, swim) {
             if (err) throw err
-            this.emit('ready', swim.members())
+            this.emit('ready')
             this.swim = swim
         }.bind(this))
+    },
+    members : function() {
+        return this.swim.members()
     },
     leave : function() {
         if (this.swim) this.swim.leave()

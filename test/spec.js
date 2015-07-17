@@ -14,6 +14,10 @@ describe('yolog', function() {
         port : 11002
     })
 
+    before(function(done) {
+        log1.on('ready', done)
+    })
+
     after(function() {
         log1.destroy()
         log2.destroy()
@@ -21,15 +25,20 @@ describe('yolog', function() {
     })
 
     it('can use multicast-dns to bootstrap swim', function(done) {
-        log1.on('ready', (peers) => {
-            assert(peers.length == 2)
-            var ports = peers.map(function(p) {
-                return p.host.split(':')[1]
-            })
-            assert(ports.indexOf('11001') >= 0)
-            assert(ports.indexOf('11002') >= 0)   
-            done()
+        var peers = log1.members()
+        assert(peers.length == 2)
+        var ports = peers.map(function(p) {
+            return p.host.split(':')[1]
         })
+        assert(ports.indexOf('11001') >= 0)
+        assert(ports.indexOf('11002') >= 0)   
+        done()
+    })
+
+    it('has proper message flow producer -> store -> projector', function(done) {
+        assert(true); 
+//        log1.append('some stringified data')
+        done()
     })
 
 })
