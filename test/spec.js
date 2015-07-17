@@ -37,9 +37,12 @@ describe('yolog', function() {
 
     it('has proper message flow producer -> store -> projector', function(done) {
         assert(true); 
-//        log1.append('some stringified data')
+        log1.append('some stringified data')
         done()
+        //setTimeout(done, 1000)
     })
+
+    // it can detect new members
 
 })
 

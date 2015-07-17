@@ -9,16 +9,17 @@ var defaultOpts = {
     autojoin   : true,
     port       : 11000,
     address    : address(),
-    busport    : 11010,
-    busaddress : address()
+    pubPort    : 11010,
+    pubAddress : address()
 }
 
 var yolog = {
-    join : function() {
+    join : function(fn) {
         join(this.opts, function(err, swim) {
             if (err) throw err
             this.emit('ready')
             this.swim = swim
+            if (typeof fn === 'function') fn()
         }.bind(this))
     },
     members : function() {
@@ -27,6 +28,7 @@ var yolog = {
     leave : function() {
         if (this.swim) this.swim.leave()
         delete this.swim
+        this._leave && this._leave()
     },
     destroy : function() {
         this.leave()
@@ -36,16 +38,47 @@ var yolog = {
 var producer = function(log, opts) {
     if (!(this instanceof producer)) return new producer(log, opts)
     this.opts = assign(defaultOpts, opts || {}, { log:log, type:'producer' }) 
-    if (this.opts.autojoin) this.join()
+    this.logs = []
+    this.pub  = nano.socket('pub')
+    this.pub.bind(pubaddr(this.opts))
+    if (this.opts.autojoin) this.join(this.init.bind(this))
 }
-producer.prototype = assign({}, yolog, EventEmitter.prototype)
+producer.prototype = assign({
+    init : function() {
+        this.swim.on('error', function(err) { console.error('swim error', err) })
+    },
+    append : function(data) {
+        this.logs.push(data)
+    },
+    _leave : function() {
+        // TODO: This throws is no connection - why?
+        this.pub.close()
+    }
+}, yolog, EventEmitter.prototype)
 
 var store = function(log, opts) {
     if (!(this instanceof store)) return new store(log, opts)
     this.opts = assign(defaultOpts, opts || {}, { log:log, type:'store' })
-    if (this.opts.autojoin) this.join()
+    this.subs = {}
+    if (this.opts.autojoin) this.join(this.init.bind(this))
 }
-store.prototype = assign({}, yolog, EventEmitter.prototype)
+store.prototype = assign({
+    init : function() {
+        this.swim.on('change', this.checkProducers.bind(this))
+        this.swim.on('update', this.checkProducers.bind(this))
+        this.swim.on('error', function(err) { console.error('swim error', err) })
+        this.checkProducers()
+    },
+    checkProducers : function() {
+        manageProducers(this, this.swim.members())
+    },
+    _leave : function() {
+        Object.keys(this.subs).forEach(function(pubaddr) {
+            this.subs[pubaddr].close()
+        }.bind(this))
+        this.subs = {}
+    } 
+}, yolog, EventEmitter.prototype)
 
 var projector = function(log, opts) {
     if (!(this instanceof projector)) return new projector(log, opts)
@@ -90,27 +123,66 @@ function gossip(opts) {
     return new Swim({
         local : {
             host : opts.address+':'+opts.port,
-            meta : {
-                bus : 'kolumbus'
-            } 
+            meta : typemeta(opts) 
         }
     })
 }
 
-//    checkBusMembers : function() {
-//        // Add new members
-//        this.swim.members().forEach(function(mem) {
-//            var membus = mem.meta.bus
-//            if (Object.keys(this.subs).indexOf(membus) >= 0) return
-//            var sub = nano.socket('sub')
-//            sub.connect(membus)
-//            sub.on('message', function(msg) {
-//                this.emit('log', msg)
-//            }.bind(this))
-//            this.subs[membus] = sub
-//        }.bind(this))
-//        // TODO: Remove dead/suspect members
-//    }
+function typemeta(opts) {
+    switch(opts.type) {
+        case 'producer':
+            return {
+                type : 'producer',
+                pub  : pubaddr(opts) 
+            }
+        case 'store':
+            return {
+                type : 'store'
+            }
+        case 'projector':
+            return {
+                type : 'projector'
+            }
+        default:
+            return {
+                type : 'virus'
+            }
+    }
+}
+
+function pubaddr(opts) {
+    return opts.produceraddr || 'tcp://'+opts.pubAddress + ':' + opts.pubPort
+}
+
+function manageProducers(yolog, members) {
+    // Add any new members
+    var producers = members.filter(function(member) {
+        return member.meta.type == 'producer'
+    })
+
+    producers 
+        .filter(function(producer) {
+            return Object.keys(yolog.subs).indexOf(producer.meta.pub) < 0 
+        })
+        .forEach(function(producer) {
+            var pub = producer.meta.pub
+            var sub = nano.socket('sub')
+            sub.connect(pub)
+            yolog.subs[pub] = sub
+        })
+
+    // Disconnect lost members 
+
+//    var pubaddrs = members.
+//    Object.keys(this.subs)
+//        .filter(function(pubaddr) {
+//            return 
+//        })
+//        .filter(function(producer) {
+//            return Object.keys(producers).indexOf(producer.meta.pub) < 0 
+//        })
+        
+}
 
 module.exports = {
     producer  : producer,
