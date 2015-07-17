@@ -5,10 +5,12 @@ var yolog  = require('../index')
 describe('yolog', function() {
 
     var log1 = yolog.producer('yolog', {
-        port : 11000 // default
+        port    : 11000, // default
+        pubPort : 11010  // default
     })
     var log2 = yolog.store('yolog', {
-        port : 11001
+        port    : 11001,
+        pubPort : 11011
     })
     var log3 = yolog.projector('yolog', {
         port : 11002
@@ -40,6 +42,11 @@ describe('yolog', function() {
         log1.append(msg)
         log2.on('log', function(log) {
             assert(log.toString() == msg)
+            // perform actual storage here
+            log2.forward(log.toString()+' stored')
+        })
+        log3.on('log', function(log) {
+            assert(log.toString() == msg+' stored')
             done()
         })
     })
@@ -48,12 +55,10 @@ describe('yolog', function() {
 
 })
 
-// TODO: Should we maintain two sets of pub-subs ??
-// Perhaps first push to storage ? when saved push to projectors ?
-
 // MORE TESTS:
 // it handles adding and removing peers
 // it handles missing storage
 // it handles missing projectors (do we care?)
 
-// TODO: Add perf tests
+// TODO: 
+// Add perf tests

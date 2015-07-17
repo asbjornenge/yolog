@@ -61,22 +61,28 @@ var store = function(log, opts) {
     if (!(this instanceof store)) return new store(log, opts)
     this.opts = assign(defaultOpts, opts || {}, { log:log, type:'store' })
     this.subs = {}
+    this.pub  = nano.socket('pub')
+    this.pub.bind(pubaddr(this.opts))
     if (this.opts.autojoin) this.join(this.init.bind(this))
 }
 store.prototype = assign({
     init : function() {
-        this.swim.on('change', this.checkProducers.bind(this))
-        this.swim.on('update', this.checkProducers.bind(this))
+        this.swim.on('change', this.manageSubscriptions.bind(this))
+        this.swim.on('update', this.manageSubscriptions.bind(this))
         this.swim.on('error', function(err) { console.error('swim error', err) })
-        this.checkProducers()
+        this.manageSubscriptions()
     },
-    checkProducers : function() {
-        manageProducers(this, this.swim.members())
+    manageSubscriptions : function() {
+        manageSubscriptions(this, this.swim.members(), 'producer')
     },
-    onMessage : function(msg) {
-        this.emit('log', msg)
+    onLog : function(log) {
+        this.emit('log', log)
+    },
+    forward : function(log) {
+        this.pub.send(log)
     },
     _leave : function() {
+        this.pub.close()
         Object.keys(this.subs).forEach(function(pubaddr) {
             this.subs[pubaddr].close()
         }.bind(this))
@@ -87,9 +93,29 @@ store.prototype = assign({
 var projector = function(log, opts) {
     if (!(this instanceof projector)) return new projector(log, opts)
     this.opts = assign(defaultOpts, opts || {}, { log:log, type:'projector' }) 
-    if (this.opts.autojoin) this.join()
+    this.subs = {}
+    if (this.opts.autojoin) this.join(this.init.bind(this))
 }
-projector.prototype = assign({}, yolog, EventEmitter.prototype)
+projector.prototype = assign({
+    init : function() {
+        this.swim.on('change', this.manageSubscriptions.bind(this))
+        this.swim.on('update', this.manageSubscriptions.bind(this))
+        this.swim.on('error', function(err) { console.error('swim error', err) })
+        this.manageSubscriptions()
+    },
+    manageSubscriptions : function() {
+        manageSubscriptions(this, this.swim.members(), 'store')
+    },
+    onLog : function(log) {
+        this.emit('log', log)
+    },
+    _leave : function() {
+        Object.keys(this.subs).forEach(function(pubaddr) {
+            this.subs[pubaddr].close()
+        }.bind(this))
+        this.subs = {}
+    } 
+}, yolog, EventEmitter.prototype)
 
 function join(opts, fn) {
     var peers = []
@@ -141,7 +167,8 @@ function typemeta(opts) {
             }
         case 'store':
             return {
-                type : 'store'
+                type : 'store',
+                pub  : pubaddr(opts) 
             }
         case 'projector':
             return {
@@ -158,14 +185,14 @@ function pubaddr(opts) {
     return opts.produceraddr || 'tcp://'+opts.pubAddress + ':' + opts.pubPort
 }
 
-function manageProducers(yolog, members) {
+function manageSubscriptions(yolog, members, filter) {
     var producers = members.filter(function(member) {
-        return member.meta.type == 'producer'
+        return member.meta.type == filter
     })
     var pubs = producers.map(function(member) {
         return member.meta.pub
     })
-    
+   
     // Connect to new producers 
 
     producers 
@@ -176,7 +203,7 @@ function manageProducers(yolog, members) {
             var pub = producer.meta.pub
             var sub = nano.socket('sub')
             sub.connect(pub)
-            sub.on('message', yolog.onMessage.bind(yolog))
+            sub.on('message', yolog.onLog.bind(yolog))
             yolog.subs[pub] = sub
         })
 
